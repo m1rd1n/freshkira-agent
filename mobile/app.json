@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "FreshKira Agent",
+    "slug": "freshkira-agent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A6B4A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.freshkira.agent"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#1A6B4A"
+      },
+      "package": "com.freshkira.agent"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ],
+    "scheme": "freshkira-agent",
+    "web": {
+      "output": "single-page-application",
+      "bundler": "metro",
+      "favicon": "./assets/icon.png",
+      "name": "FreshKira Agent",
+      "description": "Brand intelligence for FreshKira — TikTok, Shopee, and ROI analysis in minutes."
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

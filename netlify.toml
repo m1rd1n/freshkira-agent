@@ -1,0 +1,13 @@
+[build]
+  base    = "mobile"
+  command = "npm install && npm run build:web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Expo Router is a SPA — all paths must serve index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
