@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -113,15 +112,21 @@ export function StreamingOutput({
   badge,
 }: StreamingOutputProps) {
   const handleCopy = async () => {
-    await Clipboard.setStringAsync(output);
+    if (Platform.OS === 'web') {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(output).catch(() => {});
+      }
+    } else {
+      await Share.share({ message: output });
+    }
   };
 
   const handleShare = async () => {
     if (Platform.OS === 'web') {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ text: output }).catch(() => {});
-      } else {
-        await Clipboard.setStringAsync(output);
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(output).catch(() => {});
       }
     } else {
       await Share.share({ message: output });
