@@ -73,4 +73,10 @@ def build_system_message() -> str:
 
 def build_user_message(mode: str, user_input: str) -> str:
     trigger = MODE_TRIGGERS.get(mode, mode)
-    return f"{trigger}: {user_input}"
+    # Wrap input in explicit delimiters so the model treats it as data, not instructions
+    return (
+        f"{trigger}:\n\n"
+        f"<user_data>\n"
+        f"{user_input}\n"
+        f"</user_data>"
+    )

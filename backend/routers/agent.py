@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, HTTPException, Request
@@ -13,6 +14,26 @@ router = APIRouter()
 
 VALID_MODES = {"TREND_SCAN", "PRICE_REVIEW", "ROI_CHECK"}
 MAX_INPUT_LENGTH = 5000
+
+# Patterns that indicate a prompt injection attempt
+_INJECTION_PATTERNS = re.compile(
+    r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions?"
+    r"|forget\s+(everything|all|the\s+above)"
+    r"|you\s+are\s+now\s+a"
+    r"|new\s+instructions?:"
+    r"|disregard\s+(all\s+)?(previous|prior|above)"
+    r"|reveal\s+(your|the)\s+(system\s+)?prompt"
+    r"|print\s+(your|the)\s+(system\s+)?prompt"
+    r"|ignore\s+your\s+(training|instructions?|system)"
+    r"|<\s*system\s*>"
+    r"|\[INST\]"
+    r"|###\s*system\b",
+    re.IGNORECASE,
+)
+
+
+def _check_injection(text: str) -> bool:
+    return bool(_INJECTION_PATTERNS.search(text))
 
 
 class AgentRequest(BaseModel):
@@ -31,6 +52,8 @@ class AgentRequest(BaseModel):
     def validate_user_input(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("userInput must not be empty")
+        if _check_injection(v):
+            raise ValueError("Input contains disallowed content.")
         return v
 
 
