@@ -31,10 +31,10 @@ const NAV_ITEMS = [
   },
 ] as const;
 
-// Mode screens belong to Home — keep Home highlighted while on them
 const MODE_PATHS = new Set(['/trend-scan', '/price-review', '/roi-check']);
+const MODE_NAMES = new Set(['trend-scan', 'price-review', 'roi-check']);
 
-// ── Desktop sidebar (lives in the normal flex flow, never overlaps) ────────────
+// ── Desktop sidebar ───────────────────────────────────────────────────────────
 function DesktopSidebar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -81,8 +81,7 @@ function MobileTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
   const currentRouteName: string = state.routes[state.index]?.name ?? 'index';
 
-  // Hide when inside a mode screen
-  if (['trend-scan', 'price-review', 'roi-check'].includes(currentRouteName)) return null;
+  if (MODE_NAMES.has(currentRouteName)) return null;
 
   return (
     <View style={[styles.bottomBar, { paddingBottom: insets.bottom || 8 }]}>
@@ -110,53 +109,40 @@ function MobileTabBar({ state, navigation }: any) {
   );
 }
 
-// ── Root layout ───────────────────────────────────────────────────────────────
+// ── Root layout — ONE <Tabs>, conditional wrapper only ────────────────────────
 export default function RootLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  if (isDesktop) {
-    return (
-      <View style={styles.desktopRoot}>
-        <DesktopSidebar />
-        <View style={styles.desktopContent}>
-          <Tabs
-            tabBar={() => null}
-            screenOptions={{ headerShown: false }}
-          >
-            <Tabs.Screen name="index"        options={{ title: 'Home' }} />
-            <Tabs.Screen name="history"      options={{ title: 'History' }} />
-            <Tabs.Screen name="trend-scan"   options={{ href: null }} />
-            <Tabs.Screen name="price-review" options={{ href: null }} />
-            <Tabs.Screen name="roi-check"    options={{ href: null }} />
-          </Tabs>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <Tabs
-      tabBar={(props) => <MobileTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tabs.Screen name="index"        options={{ title: 'Home' }} />
-      <Tabs.Screen name="history"      options={{ title: 'History' }} />
-      <Tabs.Screen name="trend-scan"   options={{ href: null }} />
-      <Tabs.Screen name="price-review" options={{ href: null }} />
-      <Tabs.Screen name="roi-check"    options={{ href: null }} />
-    </Tabs>
+    <View style={[styles.root, isDesktop && styles.rootDesktop]}>
+      {isDesktop && <DesktopSidebar />}
+
+      <View style={styles.content}>
+        <Tabs
+          tabBar={(props) => isDesktop ? null : <MobileTabBar {...props} />}
+          screenOptions={{ headerShown: false }}
+        >
+          <Tabs.Screen name="index"        options={{ title: 'Home' }} />
+          <Tabs.Screen name="history"      options={{ title: 'History' }} />
+          <Tabs.Screen name="trend-scan"   options={{ href: null }} />
+          <Tabs.Screen name="price-review" options={{ href: null }} />
+          <Tabs.Screen name="roi-check"    options={{ href: null }} />
+        </Tabs>
+      </View>
+    </View>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  // ── Desktop layout ───────────────────────────────────────────────────────────
-  desktopRoot: {
+  root: {
     flex: 1,
+  },
+  rootDesktop: {
     flexDirection: 'row',
   },
-  desktopContent: {
+  content: {
     flex: 1,
   },
 
