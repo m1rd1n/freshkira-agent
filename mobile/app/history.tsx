@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -114,8 +113,8 @@ export default function HistoryScreen() {
     if (Platform.OS === 'web') {
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share({ text: selected.output }).catch(() => {});
-      } else {
-        await Clipboard.setStringAsync(selected.output);
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(selected.output).catch(() => {});
       }
     } else {
       await Share.share({ message: selected.output });
