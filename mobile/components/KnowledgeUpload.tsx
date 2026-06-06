@@ -1,6 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,16 +20,31 @@ interface KnowledgeUploadProps {
   onRemove: (index: number) => void;
 }
 
-const ACCEPTED_TYPES = ['text/plain', 'text/markdown', 'text/csv', 'application/octet-stream'];
-const ACCEPTED_EXTENSIONS = ['.txt', '.md', '.csv'];
-
-async function readContent(uri: string): Promise<string> {
-  if (Platform.OS === 'web') {
-    const res = await fetch(uri);
-    return await res.text();
-  }
-  return await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.UTF8,
+async function pickFilesWeb(): Promise<KnowledgeFile[]> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.md,.csv';
+    input.multiple = true;
+    input.onchange = async () => {
+      const picked = Array.from(input.files ?? []);
+      const loaded: KnowledgeFile[] = [];
+      for (const file of picked) {
+        try {
+          const content = await file.text();
+          loaded.push({
+            name: file.name,
+            content,
+            sizeKB: Math.round(file.size / 1024),
+          });
+        } catch {
+          // skip unreadable files
+        }
+      }
+      resolve(loaded);
+    };
+    input.oncancel = () => resolve([]);
+    input.click();
   });
 }
 
@@ -45,41 +58,22 @@ export function KnowledgeUpload({
   const [picking, setPicking] = useState(false);
 
   const handlePick = async () => {
+    if (Platform.OS !== 'web') return;
     setPicking(true);
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ACCEPTED_TYPES,
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-
-      if (result.canceled) return;
-
-      const loaded: KnowledgeFile[] = [];
-
-      for (const asset of result.assets) {
-        const ext = asset.name.split('.').pop()?.toLowerCase() ?? '';
-        if (!ACCEPTED_EXTENSIONS.includes(`.${ext}`)) continue;
-
-        const content = await readContent(asset.uri);
-        loaded.push({
-          name: asset.name,
-          content,
-          sizeKB: Math.round((asset.size ?? content.length) / 1024),
-        });
-      }
-
+      const loaded = await pickFilesWeb();
       if (loaded.length > 0) onAdd(loaded);
-    } catch {
-      // user cancelled or permission denied — silently ignore
     } finally {
       setPicking(false);
     }
   };
 
+  if (Platform.OS !== 'web') {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
-      {/* Section header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="documents-outline" size={14} color={Colors.textMuted} />
@@ -107,19 +101,14 @@ export function KnowledgeUpload({
         </TouchableOpacity>
       </View>
 
-      {/* Hint */}
       {files.length === 0 && (
         <Text style={styles.hint}>
           Attach .txt, .md, or .csv files — the agent will read them as extra context.
         </Text>
       )}
 
-      {/* Error */}
-      {error && (
-        <Text style={styles.errorText}>{error}</Text>
-      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
-      {/* File chips */}
       {files.length > 0 && (
         <View style={styles.chipRow}>
           {files.map((file, i) => (
@@ -140,7 +129,6 @@ export function KnowledgeUpload({
         </View>
       )}
 
-      {/* Total size */}
       {files.length > 0 && (
         <Text style={styles.totalSize}>
           {files.length} file{files.length !== 1 ? 's' : ''} · {totalSizeKB} KB total
